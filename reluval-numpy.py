@@ -60,8 +60,9 @@ def forward(net, lower, upper, return_grad_mask=False):
     grad_mask = {}
 
     for layer_id, layer in enumerate(net['layers']):
-        if isinstance(layer, np.ndarray):  # Linear layer
-            eq_lower, eq_upper = linear_transform(layer, None, eq_lower, eq_upper)
+        if isinstance(layer, tuple):  # Linear layer with weights and bias
+            weights, bias = layer
+            eq_lower, eq_upper = linear_transform(weights, bias, eq_lower, eq_upper)
         elif isinstance(layer, str) and layer == 'relu':
             (eq_lower, eq_upper), grad_mask_l = relu_transform(eq_lower, eq_upper, lower, upper, input_bounds=(o_l_l, o_u_u))
             grad_mask[layer_id] = grad_mask_l
@@ -77,12 +78,12 @@ def forward(net, lower, upper, return_grad_mask=False):
 if __name__ == "__main__":
     # Define the weights and biases for the two linear layers
     weights1 = np.array([[2., 3.], [1., 1.]])
-    bias1 = None  # No bias for this layer
+    bias1 = np.array([1., 2.])  # Bias for the first linear layer
     weights2 = np.array([[1., -1.]])
-    bias2 = None  # No bias for this layer
+    bias2 = np.array([0.])  # Bias for the second linear layer
 
     # Create the network as a dictionary of layers
-    net = {'layers': [weights1, 'relu', weights2]}
+    net = {'layers': [(weights1, bias1), 'relu', (weights2, bias2)]}
 
     # Define input bounds
     input_lower = np.array([4., 1.])
